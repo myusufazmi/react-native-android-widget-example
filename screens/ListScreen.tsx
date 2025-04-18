@@ -28,11 +28,29 @@ export type ExampleScreens = {
   SvgScreen: undefined;
   TextScreen: undefined;
   CounterScreen: undefined;
+  IntroScreen: undefined;
+  SigninScreen: undefined;
+  OtpScreen: { phone: string; id: string };
+  ProfileScreen: undefined;
+  HomeTabs: undefined;
+  LevelScreen: undefined;
+  RewardScreen: undefined;
+  RewardDetailScreen: { id: string };
+  PreferenceScreen: undefined;
+  PersonalScreen: undefined;
+  LinkedScreen: undefined;
+  SupportScreen: undefined;
+  AppreanceScreen: undefined;
+  HelpScreen: undefined;
+  ContentScreen: { title: string; data: string };
 };
+
+// Screens that do not require params
+export type NoParamScreens = { [K in keyof ExampleScreens]: ExampleScreens[K] extends undefined ? K : never }[keyof ExampleScreens];
 
 interface Item {
   title: string;
-  screen: keyof ExampleScreens;
+  screen: NoParamScreens;
 }
 
 const items: Item[] = [

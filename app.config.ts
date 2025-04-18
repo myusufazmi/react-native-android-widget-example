@@ -113,5 +113,13 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       projectId: '6285afd8-26f8-48a5-b56a-d3382aad19e4',
     },
   },
-  plugins: [['react-native-android-widget', widgetConfig]],
+  plugins: [
+    // Configure Android minSdk via expo-build-properties
+    ['expo-build-properties', {
+      android: { minSdkVersion: 26 }
+    }],
+    ['react-native-android-widget', widgetConfig],
+    // Enable Apple Authentication plugin
+    'expo-apple-authentication',
+  ],
 });
