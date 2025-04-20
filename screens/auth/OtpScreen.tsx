@@ -80,69 +80,74 @@ export default function OTPScreen() {
   }
 
   async function signInWithOTP(text: string) {
-    if (phone !== '+6281234567890') {
-      const resp = await fetch(`${process.env.EXPO_PUBLIC_OTP_URL}/v1/otp/verify`, {
-        headers: {
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${process.env.EXPO_PUBLIC_OTP_TOKEN}`,
-        },
-        method: 'POST',
-        body: JSON.stringify({
-          otp: text,
-          otp_id: idOTP,
-        }),
-      })
-      const respJson = await resp.json()
-      // const respJson = { status: true, message: 'success' }
-      if (respJson.status) {
-        const {
-          data: { user, session },
-          error,
-        } = await supabase.auth.verifyOtp({
+    try {
+      if (phone !== '+6281234567890') {
+        const resp = await fetch(`${process.env.EXPO_PUBLIC_OTP_URL}/v1/otp/verify`, {
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.EXPO_PUBLIC_OTP_TOKEN}`,
+          },
+          method: 'POST',
+          body: JSON.stringify({
+            otp: text,
+            otp_id: idOTP,
+          }),
+        });
+        const respJson = await resp.json();
+        if (!respJson || typeof respJson.status === 'undefined') {
+          Alert.alert('Sign In Error', 'OTP server tidak merespon dengan benar.');
+          return;
+        }
+        if (respJson.status) {
+          const { data, error } = await supabase.auth.verifyOtp({
+            phone: phone,
+            token: idOTP,
+            type: 'sms',
+          });
+          if (error) {
+            Alert.alert('Sign In Error', error.message);
+          } else if (!data || !data.user) {
+            Alert.alert('Sign In Error', 'User data tidak ditemukan.');
+          } else {
+            if (!data.user.email) {
+              navigation.dispatch(
+                CommonActions.reset({ index: 0, routes: [{ name: 'ProfileScreen' }] })
+              );
+            } else {
+              navigation.dispatch(
+                CommonActions.reset({ index: 0, routes: [{ name: 'HomeTabs' }] })
+              );
+            }
+          }
+        } else {
+          Alert.alert('Sign In Error', respJson.message || 'OTP tidak valid.');
+        }
+      } else {
+        // fallback test bypass
+        const { data, error } = await supabase.auth.verifyOtp({
           phone: phone,
           token: idOTP,
           type: 'sms',
-        })
+        });
         if (error) {
-          Alert.alert('Sign In Error', error.message)
+          Alert.alert('Sign In Error', error.message);
+        } else if (!data || !data.user) {
+          Alert.alert('Sign In Error', 'User data tidak ditemukan.');
         } else {
-          if (!user?.email) {
+          if (!data.user.email) {
             navigation.dispatch(
               CommonActions.reset({ index: 0, routes: [{ name: 'ProfileScreen' }] })
-            )
+            );
           } else {
             navigation.dispatch(
               CommonActions.reset({ index: 0, routes: [{ name: 'HomeTabs' }] })
-            )
+            );
           }
         }
-      } else {
-        Alert.alert('Sign In Error', respJson.message)
       }
-    } else {
-      const {
-        data: { user, session },
-        error,
-      } = await supabase.auth.verifyOtp({
-        phone: phone,
-        token: idOTP,
-        type: 'sms',
-      })
-
-      if (error) {
-        Alert.alert('Sign In Error', error.message)
-      } else {
-        if (!user?.email) {
-          navigation.dispatch(
-            CommonActions.reset({ index: 0, routes: [{ name: 'ProfileScreen' }] })
-          )
-        } else {
-          navigation.dispatch(
-            CommonActions.reset({ index: 0, routes: [{ name: 'HomeTabs' }] })
-          )
-        }
-      }
+    } catch (err: any) {
+      Alert.alert('Sign In Error', err?.message || 'Terjadi error saat verifikasi OTP.');
     }
   }
 

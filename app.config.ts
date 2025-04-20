@@ -98,15 +98,31 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   assetBundlePatterns: ['**/*'],
   ios: {
     supportsTablet: true,
+    bundleIdentifier: 'com.settlesoft.greensteps',
+    usesAppleSignIn: true,
+    infoPlist: {
+      NSLocationWhenInUseUsageDescription: '[REASON]',
+      CFBundleAllowMixedLocalizations: true
+    }
   },
   scheme: 'uni-app',
   newArchEnabled: false,
   android: {
-    package: 'com.myusufazmi.uniapp',
+    package: 'com.settlesoft.greensteps',
     adaptiveIcon: {
-      foregroundImage: './assets/adaptive-icon.png',
-      backgroundColor: '#FFFFFF',
+      foregroundImage: './assets/images/icon.png',
+      backgroundColor: '#EEEFE7'
     },
+    permissions: [
+      'android.permission.ACTIVITY_RECOGNITION',
+      'android.permission.health.READ_STEPS',
+      'android.permission.health.WRITE_STEPS'
+    ]
+  },
+  web: {
+    bundler: 'metro',
+    output: 'static',
+    favicon: './assets/images/favicon.png'
   },
   extra: {
     eas: {
@@ -114,12 +130,35 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   plugins: [
-    // Configure Android minSdk via expo-build-properties
     ['expo-build-properties', {
-      android: { minSdkVersion: 26 }
+      android: { compileSdkVersion: 35,
+          targetSdkVersion: 35,
+          minSdkVersion: 26,
+          kotlinVersion: "1.9.25" }
     }],
+    [
+      "expo-image-picker",
+      {
+        photosPermission: "The app accesses your photos to let you share them with your friends."
+      }
+    ],
     ['react-native-android-widget', widgetConfig],
-    // Enable Apple Authentication plugin
     'expo-apple-authentication',
+    [
+      "expo-splash-screen",
+      {
+        image: "./assets/images/splash-icon.png",
+        imageWidth: 250,
+        resizeMode: "contain",
+        backgroundColor: "#EEEFE7"
+      }
+    ],
+    [
+      "@react-native-google-signin/google-signin",
+      {
+        iosUrlScheme: "com.googleusercontent.apps._some_id_here_"
+      }
+    ],
+    ['expo-localization']
   ],
 });

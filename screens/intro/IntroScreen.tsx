@@ -1,123 +1,196 @@
-import {
-    DefaultTheme,
-    DarkTheme,
-    ThemeProvider,
-  } from "@react-navigation/native";
-  import * as SplashScreen from "expo-splash-screen";
-  import { StatusBar } from "expo-status-bar";
-  import { useEffect } from "react";
-  import "react-native-reanimated";
-  import "@/utils/i18n";
-  import { useColorScheme } from "@/hooks/useColorScheme";
-  import { Permission, PermissionsAndroid, Platform } from "react-native";
-  import { useNavigation, CommonActions } from '@react-navigation/native';
-import { supabase } from "@/utils/supabase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useTranslation } from 'react-i18next'
-  
-  // Prevent the splash screen from auto-hiding before asset loading is complete.
-  SplashScreen.preventAutoHideAsync();
-  
-  export default function RootLayout() {
-    const { t } = useTranslation()
-    const colorScheme = useColorScheme();
-    const navigation = useNavigation();
+import React, { useEffect } from 'react';
+import 'react-native-reanimated';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, Dimensions, Text, Image } from 'react-native';
+import { useNavigation, CommonActions } from '@react-navigation/native';
+import SliderIntro from 'react-native-slider-intro';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { useTranslation } from 'react-i18next';
+import { useColorScheme } from '@/hooks/useColorScheme.web';
+import { Colors } from '@/constants/Colors';
 
-    useEffect(() => {
-		addIntro()
-	}, [])
+const deviceMaxHeight = Dimensions.get('screen').height;
+const { width, height } = Dimensions.get('window');
 
-	async function addIntro() {
-		const value = await AsyncStorage.setItem('intro', 'true')
-	}
+const renderNextButton = () => (
+  <ThemedView style={styles.nextButton}>
+    <ThemedText style={styles.textButton}>Next</ThemedText>
+  </ThemedView>
+);
+const renderDoneButton = () => (
+  <ThemedView style={styles.doneButton}>
+    <ThemedText style={styles.textButton}>Done</ThemedText>
+  </ThemedView>
+);
+const renderPreviousButton = () => (
+  <ThemedView style={styles.skipButton}>
+    <ThemedText style={styles.textSkipButton}>Skip</ThemedText>
+  </ThemedView>
+);
 
-	const onCloseButton = () => {
-		navigation.dispatch(
-			CommonActions.reset({ index: 0, routes: [{ name: 'SigninScreen' }] })
-		);
-	}
+import { useLayoutEffect } from 'react';
 
-    useEffect(() => {
-        checkIntro();
-    }, []);
-    
-      async function checkIntro() {
-        try {
-          supabase.auth.getSession().then(async ({ data: { session } }: any) => {
-            if (session) {
-              navigation.dispatch(
-                CommonActions.reset({ index: 0, routes: [{ name: 'HomeTabs' }] })
-              );
-            } else {
-              const value = await AsyncStorage.getItem("intro");
-              if (value === null) {
-                navigation.dispatch(
-                  CommonActions.reset({ index: 0, routes: [{ name: 'IntroScreen' }] })
-                );
-              } else {
-                navigation.dispatch(
-                  CommonActions.reset({ index: 0, routes: [{ name: 'SigninScreen' }] })
-                );
-              }
-            }
-          });
-    
-          // supabase.auth.onAuthStateChange(async (event, session) => {
-          // 	console.log(event)
-    
-          // 	if (event === 'PASSWORD_RECOVERY') {
-          // 		console.log('hit the pw recovery event!')
-          // 		const { data, error } = await supabase.auth.updateUser({ password: 'fishfish' })
-          // 	}
-    
-          // 	if (session) {
-          // 		router.replace('/(tabs)/home')
-          // 	} else {
-          // 		const value = await AsyncStorage.getItem('intro')
-          // 		console.log('value', value)
-          // 		if (value === null) {
-          // 			router.replace('/intro')
-          // 		} else {
-          // 			router.replace('/(auth)/signin')
-          // 		}
-          // 	}
-          // })
-        } catch (e) {
-          console.log("Error checking intro", e);
-        }
-      }
-    
-    useEffect(() => {
-      async function requestPermissions() {
-        if (Platform.OS === "android") {
-          try {
-            const granted = await PermissionsAndroid.request(
-              "android.permission.health.READ_STEPS" as Permission, // Gunakan tipe Permission
-              {
-                title: "Health Data Permission",
-                message:
-                  "This app needs access to your step data to function properly.",
-                buttonNeutral: "Ask Me Later",
-                buttonNegative: "Cancel",
-                buttonPositive: "OK",
-              }
-            );
-            if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-              console.warn("Health data permission denied");
-            }
-          } catch (err) {
-            console.error("Failed to request health data permission", err);
-          }
-        }
-      }
-  
-      requestPermissions();
-    }, []);
-  
-    return (
-      <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+export default function IntroScreen() {
+  const { t } = useTranslation();
+  const navigation = useNavigation<any>();
+  const colorScheme = useColorScheme();
 
-        <StatusBar style={colorScheme === "dark" ? "light" : "dark"} />
-      </ThemeProvider>
+  useLayoutEffect(() => {
+    navigation.setOptions({ headerShown: false });
+  }, [navigation]);
+
+  useEffect(() => {
+    AsyncStorage.setItem('hasSeenIntro', 'true');
+  }, []);
+
+  const onCloseButton = () => {
+    navigation.dispatch(
+      CommonActions.reset({ index: 0, routes: [{ name: 'SigninScreen' }] })
     );
-  }
+  };
+
+  return (
+    <SliderIntro
+      navContainerMaxSizePercent={0.2}
+      dotWidth={0}
+      numberOfSlides={2}
+      onDone={onCloseButton}
+      onSkip={onCloseButton}
+      renderNextButton={renderNextButton}
+      renderDoneButton={renderDoneButton}
+      renderSkipButton={renderPreviousButton}
+    >
+      {[
+        {
+          index: 1,
+          title: {
+            title: 'GreenSteps',
+            subtitle: t('introSubtitle'),
+          },
+          text: t('introDescription'),
+          image: require('@/assets/images/intro1.png'),
+        },
+        {
+          index: 2,
+          title: {
+            title: '',
+            subtitle: t('introSubtitle2'),
+          },
+          text: t('introDescription2'),
+          image: require('@/assets/images/intro2.png'),
+        },
+      ].map(({ title, text, image }, index) => {
+        const slideHeight = deviceMaxHeight * 0.75;
+        return (
+          <ThemedView style={{ backgroundColor: '#FFFFFF', width: width }} key={index}>
+            <ThemedView style={[{ backgroundColor: '#FFFFFF' }, styles.slide]}>
+              <ThemedView
+                style={[
+                  styles.container,
+                  {
+                    backgroundColor: '#FFFFFF',
+                    height: slideHeight,
+                    maxHeight: slideHeight,
+                  },
+                ]}
+              >
+                {image && <Image style={styles.image} source={image} />}
+                <ThemedView style={[{ backgroundColor: '#FFFFFF' }, styles.textContainer]}>
+                  {title?.title && (
+                    <ThemedText type='title' style={styles.title}>
+                      {title?.title}
+                    </ThemedText>
+                  )}
+                  <ThemedText style={styles.subtitle}>{title?.subtitle}</ThemedText>
+                  <ThemedText style={styles.text}>{text}</ThemedText>
+                </ThemedView>
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
+        );
+      })}
+    </SliderIntro>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    paddingTop: 0,
+    marginTop: 0,
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    maxHeight: height * 0.6,
+  },
+  slide: {
+    flex: 1,
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+  },
+  textContainer: {
+    paddingTop: 20,
+    paddingHorizontal: 15,
+  },
+  title: {
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 32,
+    fontFamily: 'Nunito_600SemiBold',
+    textAlign: 'center',
+  },
+  image: {
+    maxWidth: width,
+    maxHeight: 500,
+  },
+  text: {
+    paddingTop: 10,
+    fontSize: 17,
+    lineHeight: 26,
+    fontFamily: 'Nunito_400Regular',
+    textAlign: 'center',
+  },
+  skipButton: {
+    flex: 1,
+    marginBottom: 20,
+    marginLeft: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 150,
+    borderRadius: 50,
+    backgroundColor: '#EEEFE7',
+  },
+  nextButton: {
+    flex: 1,
+    marginBottom: 20,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 150,
+    borderRadius: 50,
+    backgroundColor: '#59BCB1',
+  },
+  doneButton: {
+    flex: 1,
+    marginBottom: 20,
+    marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 150,
+    borderRadius: 50,
+    backgroundColor: '#59BCB1',
+  },
+  textButton: {
+    color: 'white',
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 16,
+  },
+  textSkipButton: {
+    color: '#59BCB1',
+    fontFamily: 'Nunito_600SemiBold',
+    fontSize: 16,
+  },
+});
